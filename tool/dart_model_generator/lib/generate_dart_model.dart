@@ -14,21 +14,16 @@ import 'package:json_schema/json_schema.dart';
 /// They have a `fromJson` constructor that takes that JSON, and a no-name
 /// constructor that builds it.
 void run() {
-  final result = <String>[
-    '// This file is generated. To make changes, '
-        'edit schemas/dart_model.schema.json',
-    '// then run from the repo root: '
-        'dart tool/model_generator/bin/main.dart',
-    '',
-  ];
+  final result = StringBuffer();
   final schema = JsonSchema.create(
       File('schemas/dart_model.schema.json').readAsStringSync());
   for (final def in schema.defs.entries) {
-    result.add(_generateExtensionType(def.key, def.value));
+    result.writeln(_generateExtensionType(def.key, def.value));
   }
 
-  File('pkgs/dart_model/lib/src/dart_model.g.dart').writeAsStringSync(
-      DartFormatter().formatSource(SourceCode(result.join('\n'))).text);
+  final formattedResult =
+      DartFormatter().formatSource(SourceCode(result.toString())).text;
+  _mergeCode(File('pkgs/dart_model/lib/src/dart_model.dart'), formattedResult);
 }
 
 String _generateExtensionType(String name, JsonSchema definition) {
@@ -159,4 +154,73 @@ class PropertyMetadata {
 
   PropertyMetadata(
       {required this.name, required this.type, this.elementTypeName});
+}
+
+void _mergeCode(File target, String code) {
+  final outputLines =
+      target.existsSync() ? target.readAsLinesSync() : <String>[];
+  final updatedLines = code.split('\n');
+
+  final List<List<String>> unmatchedExtensionTypes = [];
+  for (final (name, extensionTypeLines)
+      in _splitToExtensionTypes(updatedLines)) {
+    final maybeRange = _findExtensionType(name, outputLines);
+    if (maybeRange == null) {
+      print('Will append missing type: $name');
+      unmatchedExtensionTypes.add(extensionTypeLines);
+    } else {
+      print('Updating existing type: $name');
+      final (start, middle, end) = maybeRange;
+
+      if (middle == null) {
+        outputLines.replaceRange(start, end + 1, extensionTypeLines);
+      } else {
+        outputLines.replaceRange(
+            start,
+            middle - 1,
+            // Exclude the ending '}'.
+            extensionTypeLines.sublist(0, extensionTypeLines.length - 1));
+      }
+    }
+  }
+  for (final extensionTypesLines in unmatchedExtensionTypes) {
+    outputLines.addAll(extensionTypesLines);
+  }
+
+  target.writeAsStringSync(outputLines.join('\n') + '\n');
+}
+
+Iterable<(String, List<String>)> _splitToExtensionTypes(
+    List<String> lines) sync* {
+  final buffer = <String>[];
+  String? name;
+  for (final line in lines) {
+    if (line.startsWith('extension type ')) {
+      name = line.substring('extension type '.length);
+      name = name.substring(0, name.indexOf('.'));
+    }
+    if (name != null) buffer.add(line);
+    if (line == '}') {
+      if (name == null) throw ('Expected an extension type!');
+      yield (name, buffer.toList());
+      name = null;
+      buffer.clear();
+    }
+  }
+}
+
+(int, int?, int)? _findExtensionType(String name, List<String> lines) {
+  int? start;
+  int? middle;
+  for (var i = 0; i != lines.length; ++i) {
+    final line = lines[i];
+    if (line.startsWith('extension type $name.')) {
+      start = i;
+    } else if (start != null && line == '  // End of generated members.') {
+      middle = i;
+    } else if (start != null && line == '}') {
+      return (start, middle, i);
+    }
+  }
+  return null;
 }

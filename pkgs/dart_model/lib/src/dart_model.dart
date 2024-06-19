@@ -1,15 +1,8 @@
-// This file is generated. To make changes, edit schemas/dart_model.schema.json
-// then run from the repo root: dart tool/model_generator/bin/main.dart
+// Copyright (c) 2024, the Dart project authors. Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
 
-extension type MetadataAnnotation.fromJson(Map<String, Object?> node) {
-  MetadataAnnotation({
-    QualifiedName? type,
-  }) : this.fromJson({
-          if (type != null) 'type': type,
-        });
-  QualifiedName get type => node['type'] as QualifiedName;
-}
-
+/// Here is some description I want to be preserved.
 extension type Interface.fromJson(Map<String, Object?> node) {
   Interface({
     List<MetadataAnnotation>? metadataAnnotations,
@@ -25,6 +18,20 @@ extension type Interface.fromJson(Map<String, Object?> node) {
       (node['metadataAnnotations'] as List).cast();
   Map<String, Member> get members => (node['members'] as Map).cast();
   Properties get properties => node['properties'] as Properties;
+
+  // End of generated members.
+
+  /// I want this to stay!
+  String get howAreYou => 'fine, thanks';
+}
+
+extension type Library.fromJson(Map<String, Object?> node) {
+  Library({
+    Map<String, Interface>? scopes,
+  }) : this.fromJson({
+          if (scopes != null) 'scopes': scopes,
+        });
+  Map<String, Interface> get scopes => (node['scopes'] as Map).cast();
 }
 
 extension type Member.fromJson(Map<String, Object?> node) {
@@ -34,6 +41,15 @@ extension type Member.fromJson(Map<String, Object?> node) {
           if (properties != null) 'properties': properties,
         });
   Properties get properties => node['properties'] as Properties;
+}
+
+extension type MetadataAnnotation.fromJson(Map<String, Object?> node) {
+  MetadataAnnotation({
+    QualifiedName? type,
+  }) : this.fromJson({
+          if (type != null) 'type': type,
+        });
+  QualifiedName get type => node['type'] as QualifiedName;
 }
 
 extension type Model.fromJson(Map<String, Object?> node) {
@@ -70,15 +86,6 @@ extension type Properties.fromJson(Map<String, Object?> node) {
   bool get isMethod => node['isMethod'] as bool;
   bool get isStatic => node['isStatic'] as bool;
   bool get isSynthetic => node['isSynthetic'] as bool;
-}
-
-extension type Library.fromJson(Map<String, Object?> node) {
-  Library({
-    Map<String, Interface>? scopes,
-  }) : this.fromJson({
-          if (scopes != null) 'scopes': scopes,
-        });
-  Map<String, Interface> get scopes => (node['scopes'] as Map).cast();
 }
 
 extension type QualifiedName.fromJson(String string) {
