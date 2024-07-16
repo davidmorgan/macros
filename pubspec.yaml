@@ -7,6 +7,8 @@ publish_to: none
 workspace:
   - pkgs/_analyzer_macros
   - pkgs/_analyzer_macros/test/package_under_test
+  - pkgs/_cfe_macros
+  - pkgs/_cfe_macros/test/package_under_test
   - pkgs/_test_macros
   - pkgs/dart_model
   - tool/dart_model_generator

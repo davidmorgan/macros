@@ -1,0 +1,40 @@
+name: _cfe_macros
+publish-to: none
+description: Macro support for the CFE.
+resolution: workspace
+
+environment:
+  sdk: ^3.5.0-259.0.dev
+
+# TODO(davidmorgan): how to run this from `dart-lang/macros`?
+dependency_overrides:
+  _js_interop_checks:
+    path: ../../../dart-sdk/sdk/pkg/_js_interop_checks
+  build_integration:
+    path: ../../../dart-sdk/sdk/pkg/build_integration
+  compiler:
+    path: ../../../dart-sdk/sdk/pkg/compiler
+  dart2wasm:
+    path: ../../../dart-sdk/sdk/pkg/dart2wasm
+  dart2js_info:
+    path: ../../../dart-sdk/sdk/pkg/dart2js_info
+  dev_compiler:
+    path: ../../../dart-sdk/sdk/pkg/dev_compiler
+  front_end:
+    path: ../../../dart-sdk/sdk/pkg/front_end
+  frontend_server:
+    path: ../../../dart-sdk/sdk/pkg/frontend_server
+  js_ast:
+    path: ../../../dart-sdk/sdk/pkg/js_ast
+  js_shared:
+    path: ../../../dart-sdk/sdk/pkg/js_shared
+  js_runtime:
+    path: ../../../dart-sdk/sdk/pkg/js_runtime
+  kernel:
+    path: ../../../dart-sdk/sdk/pkg/kernel
+  mmap:
+    path: ../../../dart-sdk/sdk/pkg/mmap
+  wasm_builder:
+    path: ../../../dart-sdk/sdk/pkg/wasm_builder
+  vm:
+    path: ../../../dart-sdk/sdk/pkg/vm
