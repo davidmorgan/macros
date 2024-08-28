@@ -39,6 +39,26 @@ class TypedMapSchema {
         for (var i = 0; i != _keys.length; ++i) _keys[i]: _valueTypes[i],
       };
 
+  Map<String, Object?> createMap(
+          [Object? v0,
+          Object? v1,
+          Object? v2,
+          Object? v3,
+          Object? v4,
+          Object? v5,
+          Object? v6,
+          Object? v7]) =>
+      {
+        if (v0 != null) _keys[0]: v0,
+        if (v1 != null) _keys[1]: v1,
+        if (v2 != null) _keys[2]: v2,
+        if (v3 != null) _keys[3]: v3,
+        if (v4 != null) _keys[4]: v4,
+        if (v5 != null) _keys[5]: v5,
+        if (v6 != null) _keys[6]: v6,
+        if (v7 != null) _keys[7]: v7,
+      };
+
   // Schemas should be instantiated once per type in generated code, so looking
   // up by identity is sufficient. It's also the fastest way to do it.
   //

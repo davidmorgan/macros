@@ -60,6 +60,7 @@
       }
     },
     "HostRequest": {
+      "type": "object",
       "$description": "A request sent from host to macro.",
       "properties": {
         "id": {
@@ -110,6 +111,7 @@
       "description": "Host's response to a [MacroStartedRequest]."
     },
     "MacroRequest": {
+      "type": "object",
       "$description": "A request sent from macro to host.",
       "properties": {
         "id": {
@@ -166,6 +168,7 @@
     },
     "Response": {
       "$description": "A response to a request.",
+      "type": "object",
       "properties": {
         "requestId": {
           "description": "The id of the request this is responding to.",

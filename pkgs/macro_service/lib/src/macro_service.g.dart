@@ -1,18 +1,24 @@
 // This file is generated. To make changes edit schemas/*.schema.json
 // then run from the repo root: dart tool/dart_model_generator/bin/main.dart
 
+import 'package:dart_model/src/json_buffer/json_buffer_builder.dart';
 import 'package:dart_model/dart_model.dart';
 
 /// A request to a macro to augment some code.
 extension type AugmentRequest.fromJson(Map<String, Object?> node)
     implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'phase': Type.uint32,
+    'target': Type.stringPointer,
+  });
   AugmentRequest({
     int? phase,
     QualifiedName? target,
-  }) : this.fromJson({
-          if (phase != null) 'phase': phase,
-          if (target != null) 'target': target,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          phase,
+          target,
+        ));
 
   /// Which phase to run: 1, 2 or 3.
   int get phase => node['phase'] as int;
@@ -24,11 +30,15 @@ extension type AugmentRequest.fromJson(Map<String, Object?> node)
 /// Macro's response to an [AugmentRequest]: the resulting augmentations.
 extension type AugmentResponse.fromJson(Map<String, Object?> node)
     implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'augmentations': Type.closedListPointer,
+  });
   AugmentResponse({
     List<Augmentation>? augmentations,
-  }) : this.fromJson({
-          if (augmentations != null) 'augmentations': augmentations,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          augmentations,
+        ));
 
   /// The augmentations.
   List<Augmentation> get augmentations =>
@@ -38,11 +48,15 @@ extension type AugmentResponse.fromJson(Map<String, Object?> node)
 /// Request could not be handled.
 extension type ErrorResponse.fromJson(Map<String, Object?> node)
     implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'error': Type.stringPointer,
+  });
   ErrorResponse({
     String? error,
-  }) : this.fromJson({
-          if (error != null) 'error': error,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          error,
+        ));
 
   /// The error.
   String get error => node['error'] as String;
@@ -51,11 +65,15 @@ extension type ErrorResponse.fromJson(Map<String, Object?> node)
 /// A macro host server endpoint. TODO(davidmorgan): this should be a oneOf supporting different types of connection. TODO(davidmorgan): it's not clear if this belongs in this package! But, where else?
 extension type HostEndpoint.fromJson(Map<String, Object?> node)
     implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'port': Type.uint32,
+  });
   HostEndpoint({
     int? port,
-  }) : this.fromJson({
-          if (port != null) 'port': port,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          port,
+        ));
 
   /// TCP port to connect to.
   int get port => node['port'] as int;
@@ -103,11 +121,15 @@ extension type HostRequest.fromJson(Map<String, Object?> node)
 /// Information about a macro that the macro provides to the host.
 extension type MacroDescription.fromJson(Map<String, Object?> node)
     implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'runsInPhases': Type.closedListPointer,
+  });
   MacroDescription({
     List<int>? runsInPhases,
-  }) : this.fromJson({
-          if (runsInPhases != null) 'runsInPhases': runsInPhases,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          runsInPhases,
+        ));
 
   /// Phases that the macro runs in: 1, 2 and/or 3.
   List<int> get runsInPhases => (node['runsInPhases'] as List).cast();
@@ -116,11 +138,15 @@ extension type MacroDescription.fromJson(Map<String, Object?> node)
 /// Informs the host that a macro has started.
 extension type MacroStartedRequest.fromJson(Map<String, Object?> node)
     implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'macroDescription': Type.typedMapPointer,
+  });
   MacroStartedRequest({
     MacroDescription? macroDescription,
-  }) : this.fromJson({
-          if (macroDescription != null) 'macroDescription': macroDescription,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          macroDescription,
+        ));
   MacroDescription get macroDescription =>
       node['macroDescription'] as MacroDescription;
 }
@@ -128,7 +154,11 @@ extension type MacroStartedRequest.fromJson(Map<String, Object?> node)
 /// Host's response to a [MacroStartedRequest].
 extension type MacroStartedResponse.fromJson(Map<String, Object?> node)
     implements Object {
-  MacroStartedResponse() : this.fromJson({});
+  static final TypedMapSchema _schema = TypedMapSchema({});
+  MacroStartedResponse()
+      : this.fromJson(DartModelScope.createMap(
+          _schema,
+        ));
 }
 
 enum MacroRequestType {
@@ -191,11 +221,15 @@ extension type MacroRequest.fromJson(Map<String, Object?> node)
 
 /// The macro to host protocol version and encoding. TODO(davidmorgan): add the version.
 extension type Protocol.fromJson(Map<String, Object?> node) implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'encoding': Type.stringPointer,
+  });
   Protocol({
     String? encoding,
-  }) : this.fromJson({
-          if (encoding != null) 'encoding': encoding,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          encoding,
+        ));
 
   /// The wire format: json or binary. TODO(davidmorgan): use an enum?
   String get encoding => node['encoding'] as String;
@@ -204,22 +238,30 @@ extension type Protocol.fromJson(Map<String, Object?> node) implements Object {
 /// Macro's query about the code it should augment.
 extension type QueryRequest.fromJson(Map<String, Object?> node)
     implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'query': Type.stringPointer,
+  });
   QueryRequest({
     Query? query,
-  }) : this.fromJson({
-          if (query != null) 'query': query,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          query,
+        ));
   Query get query => node['query'] as Query;
 }
 
 /// Host's response to a [QueryRequest].
 extension type QueryResponse.fromJson(Map<String, Object?> node)
     implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'model': Type.stringPointer,
+  });
   QueryResponse({
     Model? model,
-  }) : this.fromJson({
-          if (model != null) 'model': model,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          model,
+        ));
   Model get model => node['model'] as Model;
 }
 

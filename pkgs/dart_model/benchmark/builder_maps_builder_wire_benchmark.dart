@@ -2,30 +2,27 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:dart_model/dart_model.dart';
 import 'package:dart_model/src/json_buffer/json_buffer_builder.dart';
 
 import 'serialization_benchmark.dart';
-
-JsonBufferBuilder? runningBuffer;
 
 /// Benchmark accumulating data directly into a [JsonBufferBuilder].
 class BuilderMapsBuilderWireBenchmark extends SerializationBenchmark {
   @override
   void run() {
-    createData();
-
-    serialized = runningBuffer!.serialize();
+    DartModelScope().runSync(() {
+      createData();
+      serialized = DartModelScope.current.responseBuilder.serialize();
+    });
   }
 
   Map<String, Object?> createData() {
-    final buffer = runningBuffer = JsonBufferBuilder();
-    final map = buffer.map;
+    final map = DartModelScope.current.responseBuilder.map;
 
     for (final key in mapKeys) {
       final intKey = int.parse(key);
-      final members = buffer.createGrowableMap<Member>();
-      map[key] = Interface(
-          members: members,
+      final interface = Interface(
           properties: Properties(
               isAbstract: (intKey & 1) == 1,
               isClass: (intKey & 2) == 2,
@@ -33,12 +30,14 @@ class BuilderMapsBuilderWireBenchmark extends SerializationBenchmark {
               isField: (intKey & 8) == 8,
               isMethod: (intKey & 16) == 16,
               isStatic: (intKey & 32) == 32));
+      map[key] = interface;
+      final members = interface.members;
       for (final memberName in makeMemberNames(intKey)) {
         members[memberName] = _makeMember(memberName);
       }
     }
 
-    return buffer.map;
+    return map;
   }
 
   @override
@@ -67,10 +66,9 @@ extension type Interface.fromJson(Map<String, Object?> node) {
   });
 
   Interface({
-    Map<String, Member>? members,
     Properties? properties,
-  }) : this.fromJson(
-            runningBuffer!.createTypedMap(schema, members, properties));
+  }) : this.fromJson(DartModelScope.createMap(
+            schema, DartModelScope.createGrowableMap<Member>(), properties));
 
   /// Map of members by name.
   Map<String, Member> get members => (node['members'] as Map).cast();
@@ -86,7 +84,7 @@ extension type Member.fromJson(Map<String, Object?> node) {
 
   Member({
     Properties? properties,
-  }) : this.fromJson(runningBuffer!.createTypedMap(schema, properties));
+  }) : this.fromJson(DartModelScope.createMap(schema, properties));
 
   /// The properties of this member.
   Properties get properties => node['properties'] as Properties;
@@ -110,7 +108,7 @@ extension type Properties.fromJson(Map<String, Object?> node) {
     bool? isField,
     bool? isMethod,
     bool? isStatic,
-  }) : this.fromJson(runningBuffer!.createTypedMap(schema, isAbstract, isClass,
+  }) : this.fromJson(DartModelScope.createMap(schema, isAbstract, isClass,
             isGetter, isField, isMethod, isStatic));
 
   /// Whether the entity is abstract, meaning it has no definition.

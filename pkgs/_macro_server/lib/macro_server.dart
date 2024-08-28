@@ -35,8 +35,8 @@ class MacroServer {
     required HostService service,
   }) async {
     final serverSocket = await ServerSocket.bind('localhost', 0);
-    return MacroServer._(
-        protocol, service, HostEndpoint(port: serverSocket.port), serverSocket);
+    return MacroServer._(protocol, service,
+        HostEndpoint.fromJson({'port': serverSocket.port}), serverSocket);
   }
 
   Future<Response> sendToMacro(QualifiedName name, HostRequest request) async {
@@ -50,9 +50,9 @@ class MacroServer {
     protocol.decode(socket).forEach((jsonData) {
       final request = MacroRequest.fromJson(jsonData);
       if (request.type.isKnown) {
-        service
+        DartModelScope().run(() => service
             .handle(request)
-            .then((response) => protocol.send(socket.add, response.node));
+            .then((response) => protocol.send(socket.add, response.node)));
       }
       final response = Response.fromJson(jsonData);
       if (response.type.isKnown) {

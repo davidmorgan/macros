@@ -3,5 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 export 'src/dart_model.dart';
+export 'src/dart_model_scope.dart';
 export 'src/json.dart';
 export 'src/json_changes.dart';

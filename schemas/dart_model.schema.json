@@ -144,6 +144,7 @@
       }
     },
     "StaticType": {
+      "type": "object",
       "description": "A resolved type as it appears in Dart's type hierarchy.",
       "properties": {
         "type": {

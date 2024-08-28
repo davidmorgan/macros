@@ -5,6 +5,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:dart_model/dart_model.dart';
+
 import 'builder_maps_builder_wire_benchmark.dart';
 
 /// Benchmark accumulating data directly into a `JsonBufferBuilder` then
@@ -12,7 +14,9 @@ import 'builder_maps_builder_wire_benchmark.dart';
 class BuilderMapsJsonWireBenchmark extends BuilderMapsBuilderWireBenchmark {
   @override
   void run() {
-    serialized = json.fuse(utf8).encode(createData()) as Uint8List;
+    DartModelScope().runSync(() {
+      serialized = json.fuse(utf8).encode(createData()) as Uint8List;
+    });
   }
 
   @override

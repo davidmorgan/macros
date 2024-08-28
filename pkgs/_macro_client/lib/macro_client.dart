@@ -29,9 +29,10 @@ class MacroClient {
 
     // Tell the host which macros are in this bundle.
     for (final macro in macros) {
-      _sendRequest(MacroRequest.macroStartedRequest(
-          MacroStartedRequest(macroDescription: macro.description),
-          id: nextRequestId));
+      DartModelScope().runSync(() => _sendRequest(
+          MacroRequest.macroStartedRequest(
+              MacroStartedRequest(macroDescription: macro.description),
+              id: nextRequestId)));
     }
 
     protocol.decode(socket).listen(_handleRequest);

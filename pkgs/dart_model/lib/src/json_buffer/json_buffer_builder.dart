@@ -6,6 +6,8 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:dart_model/src/dart_model_scope.dart';
+
 part 'closed_list.dart';
 part 'closed_map.dart';
 part 'explanations.dart';

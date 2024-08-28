@@ -34,7 +34,8 @@ String generate(String schemaJson,
     '// then run from the repo root: '
         'dart tool/dart_model_generator/bin/main.dart',
     '',
-    if (importDartModel) "import 'package:dart_model/dart_model.dart';",
+    "import 'package:dart_model/src/json_buffer/json_buffer_builder.dart';",
+    "import 'package:dart_model/dart_model.dart';",
   ];
   final schema = JsonSchema.create(schemaJson,
       refProvider: LocalRefProvider(dartModelJson ??
@@ -51,7 +52,11 @@ String generate(String schemaJson,
         allDefinitions: allDefinitions,
       ));
     } else {
-      result.add(_generateExtensionType(key, value));
+      result.add(_generateExtensionType(
+        key,
+        value,
+        allDefinitions: allDefinitions,
+      ));
     }
   }
   return DartFormatter().formatSource(SourceCode(result.join('\n'))).text;
@@ -70,7 +75,8 @@ String _dartJsonType(JsonSchema definition) {
   };
 }
 
-String _generateExtensionType(String name, JsonSchema definition) {
+String _generateExtensionType(String name, JsonSchema definition,
+    {required Map<String, JsonSchema> allDefinitions}) {
   final result = StringBuffer();
 
   // Generate the extension type header with `fromJson` constructor and the
@@ -90,27 +96,41 @@ String _generateExtensionType(String name, JsonSchema definition) {
   }
   result.writeln(' {');
 
-  // Generate the non-JSON constructor, which accepts an optional value for
-  // every field and constructs JSON from it.
   final propertyMetadatas = [
     for (var e in definition.properties.entries)
       _readPropertyMetadata(e.key, e.value)
   ];
+  if (definition.type == SchemaType.object) {
+    result.write('static final TypedMapSchema _schema = TypedMapSchema({');
+    for (final property in propertyMetadatas) {
+      result.writeSchema(property, allDefinitions[property.elementTypeName]);
+    }
+    result.write('});');
+  }
+
+  // Generate the non-JSON constructor, which accepts an optional value for
+  // every field and constructs JSON from it.
   switch (definition.type) {
     case SchemaType.object:
-      if (propertyMetadatas.isEmpty) {
-        result.writeln('  $name() : this.fromJson({});');
+      final notMapPropertyMetadatas =
+          propertyMetadatas.where((p) => p.type != PropertyType.map).toList();
+
+      if (notMapPropertyMetadatas.isEmpty) {
+        result.writeln('$name() :');
       } else {
-        result.writeln('  $name({');
-        for (final property in propertyMetadatas) {
+        result.writeln('$name({');
+        for (final property in notMapPropertyMetadatas) {
           result.writeParameter(property, definition);
         }
-        result.writeln('}) : this.fromJson({');
-        for (final property in propertyMetadatas) {
-          result.writeMapElement(property, definition);
-        }
-        result.writeln('});');
+        result.writeln('}) :');
       }
+      result.writeln(' this.fromJson('
+          'DartModelScope.createMap('
+          '_schema,');
+      for (final property in propertyMetadatas) {
+        result.writeTypedMapElement(property, definition);
+      }
+      result.writeln('));');
     case SchemaType.string:
       result.writeln('$name(String string) : this.fromJson(string);');
     case SchemaType.nullValue:
@@ -373,6 +393,14 @@ extension on StringBuffer {
     writeln("'${property.name}': ${property.name},");
   }
 
+  void writeTypedMapElement(PropertyMetadata property, JsonSchema schema) {
+    if (property.type == PropertyType.map) {
+      writeln('DartModelScope.createGrowableMap<Object?>(),');
+    } else {
+      writeln('${property.name},');
+    }
+  }
+
   /// Writes a named function parameter for [property].
   ///
   /// If the property is required, it will be non-nullable and marked as
@@ -382,6 +410,24 @@ extension on StringBuffer {
     if (required) write('required ');
     writeType(property, nullable: !required);
     writeln(' ${property.name},');
+  }
+
+  void writeSchema(PropertyMetadata property, JsonSchema? schema) {
+    write("'${property.name}':");
+    write(switch (property.type) {
+      PropertyType.object => schema?.type == SchemaType.object
+          ? 'Type.typedMapPointer'
+          : schema?.type == SchemaType.string
+              ? 'Type.stringPointer'
+              // TODO(davidmorgan): why null in some cases.
+              : 'Type.stringPointer',
+      PropertyType.bool => 'Type.boolean',
+      PropertyType.string => 'Type.stringPointer',
+      PropertyType.integer => 'Type.uint32',
+      PropertyType.list => 'Type.closedListPointer',
+      PropertyType.map => 'Type.growableMapPointer',
+    });
+    write(',');
   }
 
   /// Writes a getter for [property] that looks up in the JSON and "creates"

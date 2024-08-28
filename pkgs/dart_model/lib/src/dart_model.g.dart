@@ -1,14 +1,21 @@
 // This file is generated. To make changes edit schemas/*.schema.json
 // then run from the repo root: dart tool/dart_model_generator/bin/main.dart
 
+import 'package:dart_model/src/json_buffer/json_buffer_builder.dart';
+import 'package:dart_model/dart_model.dart';
+
 /// An augmentation to Dart code. TODO(davidmorgan): this is a placeholder.
 extension type Augmentation.fromJson(Map<String, Object?> node)
     implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'code': Type.stringPointer,
+  });
   Augmentation({
     String? code,
-  }) : this.fromJson({
-          if (code != null) 'code': code,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          code,
+        ));
 
   /// Augmentation code.
   String get code => node['code'] as String;
@@ -17,11 +24,15 @@ extension type Augmentation.fromJson(Map<String, Object?> node)
 /// A metadata annotation.
 extension type MetadataAnnotation.fromJson(Map<String, Object?> node)
     implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'type': Type.stringPointer,
+  });
   MetadataAnnotation({
     QualifiedName? type,
-  }) : this.fromJson({
-          if (type != null) 'type': type,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          type,
+        ));
 
   /// The type of the annotation.
   QualifiedName get type => node['type'] as QualifiedName;
@@ -29,16 +40,20 @@ extension type MetadataAnnotation.fromJson(Map<String, Object?> node)
 
 /// An interface.
 extension type Interface.fromJson(Map<String, Object?> node) implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'metadataAnnotations': Type.closedListPointer,
+    'members': Type.growableMapPointer,
+    'properties': Type.typedMapPointer,
+  });
   Interface({
     List<MetadataAnnotation>? metadataAnnotations,
-    Map<String, Member>? members,
     Properties? properties,
-  }) : this.fromJson({
-          if (metadataAnnotations != null)
-            'metadataAnnotations': metadataAnnotations,
-          if (members != null) 'members': members,
-          if (properties != null) 'properties': properties,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          metadataAnnotations,
+          DartModelScope.createGrowableMap<Object?>(),
+          properties,
+        ));
 
   /// The metadata annotations attached to this iterface.
   List<MetadataAnnotation> get metadataAnnotations =>
@@ -53,11 +68,14 @@ extension type Interface.fromJson(Map<String, Object?> node) implements Object {
 
 /// Library.
 extension type Library.fromJson(Map<String, Object?> node) implements Object {
-  Library({
-    Map<String, Interface>? scopes,
-  }) : this.fromJson({
-          if (scopes != null) 'scopes': scopes,
-        });
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'scopes': Type.growableMapPointer,
+  });
+  Library()
+      : this.fromJson(DartModelScope.createMap(
+          _schema,
+          DartModelScope.createGrowableMap<Object?>(),
+        ));
 
   /// Scopes by name.
   Map<String, Interface> get scopes => (node['scopes'] as Map).cast();
@@ -65,11 +83,15 @@ extension type Library.fromJson(Map<String, Object?> node) implements Object {
 
 /// Member of a scope.
 extension type Member.fromJson(Map<String, Object?> node) implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'properties': Type.typedMapPointer,
+  });
   Member({
     Properties? properties,
-  }) : this.fromJson({
-          if (properties != null) 'properties': properties,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          properties,
+        ));
 
   /// The properties of this member.
   Properties get properties => node['properties'] as Properties;
@@ -77,11 +99,14 @@ extension type Member.fromJson(Map<String, Object?> node) implements Object {
 
 /// Partial model of a corpus of Dart source code.
 extension type Model.fromJson(Map<String, Object?> node) implements Object {
-  Model({
-    Map<String, Library>? uris,
-  }) : this.fromJson({
-          if (uris != null) 'uris': uris,
-        });
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'uris': Type.growableMapPointer,
+  });
+  Model()
+      : this.fromJson(DartModelScope.createMap(
+          _schema,
+          DartModelScope.createGrowableMap<Object?>(),
+        ));
 
   /// Libraries by URI.
   Map<String, Library> get uris => (node['uris'] as Map).cast();
@@ -95,17 +120,29 @@ extension type NeverType.fromJson(Null _) {
 /// A Dart type of the form `T?` for an inner type `T`.
 extension type NullableType.fromJson(Map<String, Object?> node)
     implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'inner': Type.typedMapPointer,
+  });
   NullableType({
     StaticType? inner,
-  }) : this.fromJson({
-          if (inner != null) 'inner': inner,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          inner,
+        ));
   StaticType get inner => node['inner'] as StaticType;
 }
 
 /// Set of boolean properties.
 extension type Properties.fromJson(Map<String, Object?> node)
     implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'isAbstract': Type.boolean,
+    'isClass': Type.boolean,
+    'isGetter': Type.boolean,
+    'isField': Type.boolean,
+    'isMethod': Type.boolean,
+    'isStatic': Type.boolean,
+  });
   Properties({
     bool? isAbstract,
     bool? isClass,
@@ -113,14 +150,15 @@ extension type Properties.fromJson(Map<String, Object?> node)
     bool? isField,
     bool? isMethod,
     bool? isStatic,
-  }) : this.fromJson({
-          if (isAbstract != null) 'isAbstract': isAbstract,
-          if (isClass != null) 'isClass': isClass,
-          if (isGetter != null) 'isGetter': isGetter,
-          if (isField != null) 'isField': isField,
-          if (isMethod != null) 'isMethod': isMethod,
-          if (isStatic != null) 'isStatic': isStatic,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          isAbstract,
+          isClass,
+          isGetter,
+          isField,
+          isMethod,
+          isStatic,
+        ));
 
   /// Whether the entity is abstract, meaning it has no definition.
   bool get isAbstract => node['isAbstract'] as bool;
@@ -148,11 +186,15 @@ extension type QualifiedName.fromJson(String string) implements Object {
 
 /// Query about a corpus of Dart source code. TODO(davidmorgan): this queries about a single class, expand to a union type for different types of queries.
 extension type Query.fromJson(Map<String, Object?> node) implements Object {
+  static final TypedMapSchema _schema = TypedMapSchema({
+    'target': Type.stringPointer,
+  });
   Query({
     QualifiedName? target,
-  }) : this.fromJson({
-          if (target != null) 'target': target,
-        });
+  }) : this.fromJson(DartModelScope.createMap(
+          _schema,
+          target,
+        ));
 
   /// The class to query about.
   QualifiedName get target => node['target'] as QualifiedName;

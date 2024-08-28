@@ -11,8 +11,8 @@ import 'package:test/test.dart';
 
 void main() {
   for (final protocol in [
-    Protocol(encoding: 'json'),
-    Protocol(encoding: 'binary')
+    Protocol.fromJson({'encoding': 'json'}),
+    Protocol.fromJson({'encoding': 'binary'})
   ]) {
     group('MacroHost using ${protocol.encoding}', () {
       test('hosts a macro, receives augmentations', () async {
@@ -74,7 +74,8 @@ void main() {
 class TestQueryService implements QueryService {
   @override
   Future<QueryResponse> handle(QueryRequest request) async {
-    return QueryResponse(
-        model: Model(uris: {'package:foo/foo.dart': Library()}));
+    final model = Model();
+    model.uris['package:foo/foo.dart'] = Library();
+    return QueryResponse(model: model);
   }
 }
