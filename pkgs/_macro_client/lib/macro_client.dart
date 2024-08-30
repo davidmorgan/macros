@@ -29,7 +29,7 @@ class MacroClient {
 
     // Tell the host which macros are in this bundle.
     for (final macro in macros) {
-      DartModelScope().runSync(() => _sendRequest(
+      DartModelScope('macro').runSync(() => _sendRequest(
           MacroRequest.macroStartedRequest(
               MacroStartedRequest(macroDescription: macro.description),
               id: nextRequestId)));
@@ -61,9 +61,13 @@ class MacroClient {
     final hostRequest = HostRequest.fromJson(jsonData);
     switch (hostRequest.type) {
       case HostRequestType.augmentRequest:
-        _sendResponse(Response.augmentResponse(
-            await macros.single.augment(_host, hostRequest.asAugmentRequest),
-            requestId: hostRequest.id));
+        await DartModelScope('macro').run(() async {
+          final response = Response.augmentResponse(
+              await macros.single.augment(_host, hostRequest.asAugmentRequest),
+              requestId: hostRequest.id);
+          _sendResponse(response);
+        });
+
       default:
       // Ignore unknown request.
       // TODO(davidmorgan): make handling of unknown request types a designed
@@ -95,8 +99,10 @@ class RemoteMacroHost implements Host {
 
   @override
   Future<Model> query(Query query) async {
-    _client._sendRequest(MacroRequest.queryRequest(QueryRequest(query: query),
-        id: nextRequestId));
+    await DartModelScope('query').run(() async {
+      _client._sendRequest(MacroRequest.queryRequest(QueryRequest(query: query),
+          id: nextRequestId));
+    });
     // TODO(davidmorgan): this is needed because the constructor doesn't wait
     // for responses to `MacroStartedRequest`, so we need to discard the
     // responses. Properly track requests and responses.

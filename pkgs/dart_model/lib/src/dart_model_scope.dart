@@ -20,8 +20,8 @@ class DartModelScope {
   static DartModelScope? get _currentOrNull =>
       Zone.current[_symbol] as DartModelScope?;
 
-  Future<void> run(Future<void> Function() function) async {
-    await runZoned(function, zoneValues: {_symbol: this});
+  Future<T> run<T>(Future<T> Function() function) async {
+    return await runZoned(function, zoneValues: {_symbol: this});
   }
 
   void runSync(void Function() function) {
@@ -62,6 +62,8 @@ class DartModelScope {
     }
     return _responseBuilder;
   }
+
+  JsonBufferBuilder? get responseBuilderOrNull => _responseBuilder;
 
   @override
   String toString() => 'DartModelScope($name)';

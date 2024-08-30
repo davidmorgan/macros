@@ -11,7 +11,7 @@ import 'serialization_benchmark.dart';
 class BuilderMapsBuilderWireBenchmark extends SerializationBenchmark {
   @override
   void run() {
-    DartModelScope().runSync(() {
+    DartModelScope('benchmark').runSync(() {
       createData();
       serialized = DartModelScope.current.responseBuilder.serialize();
     });

@@ -93,14 +93,16 @@ void main() {
         });
 
         final requestId = nextRequestId;
-        protocol.send(
-            socket.add,
-            HostRequest.augmentRequest(
-                    AugmentRequest(
-                        phase: 3,
-                        target: QualifiedName('package:foo/foo.dart#Foo')),
-                    id: requestId)
-                .node);
+        DartModelScope('test').runSync(() {
+          protocol.send(
+              socket.add,
+              HostRequest.augmentRequest(
+                      AugmentRequest(
+                          phase: 3,
+                          target: QualifiedName('package:foo/foo.dart#Foo')),
+                      id: requestId)
+                  .node);
+        });
         final queryRequest = await responses.next;
         final queryRequestId = MacroRequest.fromJson(queryRequest).id;
         expect(
@@ -114,14 +116,16 @@ void main() {
           },
         );
 
-        protocol.send(
-            socket.add,
-            Response.queryResponse(
-                    QueryResponse(
-                        model:
-                            Model(uris: {'package:foo/foo.dart': Library()})),
-                    requestId: queryRequestId)
-                .node);
+        DartModelScope('test').runSync(() {
+          protocol.send(
+              socket.add,
+              Response.queryResponse(
+                      QueryResponse(
+                          model: Model()
+                            ..uris['package:foo/foo.dart'] = Library()),
+                      requestId: queryRequestId)
+                  .node);
+        });
 
         final augmentRequest = await responses.next;
         expect(
@@ -132,7 +136,7 @@ void main() {
             'value': {
               'augmentations': [
                 {
-                  'code': '// {"uris":{"package:foo/foo.dart":{}}}',
+                  'code': '// {"uris":{"package:foo/foo.dart":{"scopes":{}}}}',
                 }
               ]
             }

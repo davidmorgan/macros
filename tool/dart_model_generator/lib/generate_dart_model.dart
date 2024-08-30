@@ -415,12 +415,14 @@ extension on StringBuffer {
   void writeSchema(PropertyMetadata property, JsonSchema? schema) {
     write("'${property.name}':");
     write(switch (property.type) {
-      PropertyType.object => schema?.type == SchemaType.object
-          ? 'Type.typedMapPointer'
-          : schema?.type == SchemaType.string
-              ? 'Type.stringPointer'
-              // TODO(davidmorgan): why null in some cases.
-              : 'Type.stringPointer',
+      PropertyType.object =>
+        (['Query', 'Model'].contains(property.elementTypeName) ||
+                schema?.type == SchemaType.object)
+            ? 'Type.typedMapPointer'
+            : schema?.type == SchemaType.string
+                ? 'Type.stringPointer'
+                // TODO(davidmorgan): why null in some cases.
+                : 'Type.stringPointer',
       PropertyType.bool => 'Type.boolean',
       PropertyType.string => 'Type.stringPointer',
       PropertyType.integer => 'Type.uint32',

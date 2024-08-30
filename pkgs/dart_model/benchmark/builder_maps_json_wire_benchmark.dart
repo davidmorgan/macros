@@ -14,7 +14,7 @@ import 'builder_maps_builder_wire_benchmark.dart';
 class BuilderMapsJsonWireBenchmark extends BuilderMapsBuilderWireBenchmark {
   @override
   void run() {
-    DartModelScope().runSync(() {
+    DartModelScope('benchmark').runSync(() {
       serialized = json.fuse(utf8).encode(createData()) as Uint8List;
     });
   }

@@ -61,13 +61,13 @@ class JsonBufferBuilder {
   Uint8List serialize() => Uint8List.sublistView(_buffer, 0, _nextFree);
 
   static Uint8List serializeToBinary(Map<String, Object?> map) {
-    if (map is _GrowableMap) {
-      return map._buffer.serialize();
-    } else {
-      final buffer = JsonBufferBuilder();
-      buffer.map.addAll(map);
-      return buffer.serialize();
+    final buffer =
+        DartModelScope.current.responseBuilderOrNull ?? JsonBufferBuilder();
+    if (buffer.map.isNotEmpty) {
+      throw StateError('Buffer has already been used! ${buffer.map}');
     }
+    buffer.map.addAll(map);
+    return buffer.serialize();
   }
 
   /// The number of bytes written.

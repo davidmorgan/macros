@@ -239,7 +239,7 @@ extension type Protocol.fromJson(Map<String, Object?> node) implements Object {
 extension type QueryRequest.fromJson(Map<String, Object?> node)
     implements Object {
   static final TypedMapSchema _schema = TypedMapSchema({
-    'query': Type.stringPointer,
+    'query': Type.typedMapPointer,
   });
   QueryRequest({
     Query? query,
@@ -254,7 +254,7 @@ extension type QueryRequest.fromJson(Map<String, Object?> node)
 extension type QueryResponse.fromJson(Map<String, Object?> node)
     implements Object {
   static final TypedMapSchema _schema = TypedMapSchema({
-    'model': Type.stringPointer,
+    'model': Type.typedMapPointer,
   });
   QueryResponse({
     Model? model,
