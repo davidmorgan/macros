@@ -20,65 +20,105 @@ class AnalyzerMacroTool extends MacroTool {
       required super.packageConfigPath,
       required super.scriptPath,
       required super.skipCleanup,
-      required super.watch})
+      required super.skipMacros,
+      required super.watch,
+      required super.benchmark,
+      required super.useParts})
       : super.internal();
 
-  /// Runs macros in [scriptFile] on the analyzer.
-  ///
-  /// Writes any augmentation to [_augmentationFilePath].
-  ///
-  /// Returns whether an augmentation file was written.
   @override
-  Future<bool> augment() async {
+  Future<List<String>> augment() async {
+    if (watch && benchmark) {
+      throw UnimplementedError(
+          '--watch and --benchmark cannot be used together');
+    }
+
+    // If benchmarking, modify the script before doing anything to get a
+    // meaningful "initial analysis" number.
+    if (benchmark) {
+      cacheBustScript();
+    }
+
+    final result = <String>[];
+
     final contextCollection =
         AnalysisContextCollection(includedPaths: [workspacePath]);
     final analysisContext = contextCollection.contexts.first;
-    injected_analyzer.macroImplementation =
-        await AnalyzerMacroImplementation.start(
-            protocol: Protocol(
-                encoding: ProtocolEncoding.binary,
-                version: ProtocolVersion.macros1),
-            packageConfig: Uri.file(packageConfigPath));
 
-    ResolvedLibraryResult resolvedLibrary;
+    if (!skipMacros) {
+      injected_analyzer.macroImplementation =
+          await AnalyzerMacroImplementation.start(
+              protocol: Protocol(
+                  encoding: ProtocolEncoding.binary,
+                  version: ProtocolVersion.macros1),
+              packageConfig: Uri.file(packageConfigPath));
+    }
+
+    final paths = File(scriptPath)
+        .parent
+        .listSync()
+        .whereType<File>()
+        .map((f) => f.path)
+        .where((p) => p.endsWith('.dart'))
+        .toList()
+      ..sort();
+
+    List<ResolvedLibraryResult> resolvedLibraries = [];
     // `asBroadcastStream` so repeated use of `first` below waits for the next
     // change.
     var events = File(scriptPath).watch().asBroadcastStream();
     var stopwatch = Stopwatch()..start();
     while (true) {
-      resolvedLibrary = (await analysisContext.currentSession
-          .getResolvedLibrary(scriptPath)) as ResolvedLibraryResult;
-      print('Resolved in ${stopwatch.elapsedMilliseconds}ms.');
+      for (final path in paths) {
+        resolvedLibraries.add(await analysisContext.currentSession
+            .getResolvedLibrary(path) as ResolvedLibraryResult);
+        final resolvedLibrary = resolvedLibraries.last;
 
-      final errors = (await analysisContext.currentSession
-          .getErrors(scriptPath)) as ErrorsResult;
-      final actualErrors =
-          errors.errors.where((e) => e.severity == Severity.error).toList();
-      if (actualErrors.isNotEmpty) {
-        print('Errors: $actualErrors');
-      }
+        show('Resolved in ${stopwatch.elapsedMilliseconds}ms.');
+        if (path == paths.first && showBenchmark(stopwatch)) return result;
 
-      final augmentationUnits =
-          resolvedLibrary.units.where((u) => u.isMacroPart).toList();
-      if (augmentationUnits.isEmpty) {
-        return false;
-      }
+//      for (final resolvedLibrary in resolvedLibraries) {
+        final errors = (await analysisContext.currentSession.getErrors(path))
+            as ErrorsResult;
+        final actualErrors =
+            errors.errors.where((e) => e.severity == Severity.error).toList();
+        if (actualErrors.isNotEmpty) {
+          // Display during benchmarks too, so `print` not `show`.
+          print('Errors: $actualErrors');
+        }
 
-      print('Macro output (patched to use augment library): '
-          '$augmentationFilePath');
-      File(augmentationFilePath).writeAsStringSync(augmentationUnits
-          .single.content
+        final augmentationUnits =
+            resolvedLibrary.units.where((u) => u.isMacroPart).toList();
+        if (augmentationUnits.isNotEmpty) {
+          result.add(path);
+
+          final augmentationFilePath = '$path$augmentationFileExtension';
+          show('Macro output (patched to use augment library): '
+              '$augmentationFilePath');
+          var content = augmentationUnits.single.content;
           // The analyzer produces augmentations in parts, but the CFE still
-          // wants them in augmentation libraries. Adjust the output accordingly.
-          .replaceAll('part of', 'augment library'));
+          // wants them in augmentation libraries. Adjust the output if needed.
+          if (!useParts) {
+            content = content.replaceAll('part of', 'augment library');
+          }
+          File(augmentationFilePath).writeAsStringSync(content);
+        }
+      }
 
-      if (!watch) return true;
+      if (!watch && !benchmark) return result;
 
-      print('Running with --watch, waiting for next change to script.');
-      await events.first;
-      print('Script changed, rerunning macro.');
+      if (watch) {
+        show('Running with --watch, waiting for next change to script.');
+        await events.first;
+        show('Script changed, rerunning macro.');
+      } else {
+        cacheBustScript();
+      }
       stopwatch.reset();
       analysisContext.changeFile(scriptPath);
+      if (skipMacros) {
+        analysisContext.changeFile('$scriptPath$augmentationFileExtension');
+      }
       await analysisContext.applyPendingFileChanges();
     }
   }

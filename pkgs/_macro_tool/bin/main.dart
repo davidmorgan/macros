@@ -16,7 +16,12 @@ final argParser = ArgParser()
   ..addOption('script', help: 'Path to script.')
   ..addFlag('skip-cleanup',
       help: 'Whether to skip delete of augmentations and revert of script.')
-  ..addFlag('watch', help: 'Whether to watch for changes.');
+  ..addFlag('skip-macros',
+      help: 'Whether to skip injecting the new macro implementation.')
+  ..addFlag('watch', help: 'Whether to watch for changes.')
+  ..addFlag('benchmark', help: 'Whether to benchmark macro run time.')
+  ..addFlag('use-parts',
+      help: 'Whether to use the newer parts-based augmentations.');
 
 Future<void> main(List<String> arguments) async {
   final args = argParser.parse(arguments);
@@ -43,6 +48,9 @@ ${argParser.usage}''');
       packageConfigPath: p.canonicalize(packageConfig),
       scriptPath: p.canonicalize(script),
       skipCleanup: args['skip-cleanup'] as bool,
-      watch: args['watch'] as bool);
+      skipMacros: args['skip-macros'] as bool,
+      watch: args['watch'] as bool,
+      benchmark: args['benchmark'] as bool,
+      useParts: args['use-parts'] as bool);
   await tool.run();
 }

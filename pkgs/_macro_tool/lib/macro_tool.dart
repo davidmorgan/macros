@@ -3,26 +3,36 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:io';
+import 'dart:math';
 
 import 'package:path/path.dart' as p;
 
 import 'analyzer_macro_tool.dart';
 import 'cfe_macro_tool.dart';
 
+final random = Random.secure();
+
 /// Runs a Dart script with `dart_model` macros.
 abstract class MacroTool {
-  String workspacePath;
-  String packageConfigPath;
-  String scriptPath;
-  bool skipCleanup;
-  bool watch;
+  final String workspacePath;
+  final String packageConfigPath;
+  final String scriptPath;
+  final bool skipCleanup;
+  final bool skipMacros;
+  final bool watch;
+  final bool benchmark;
+  final bool useParts;
+  int benchmarkRuns = 6;
 
   MacroTool.internal(
       {required this.workspacePath,
       required this.packageConfigPath,
       required this.scriptPath,
       required this.skipCleanup,
-      required this.watch});
+      required this.skipMacros,
+      required this.watch,
+      required this.benchmark,
+      required this.useParts});
 
   factory MacroTool(
           {required HostOption host,
@@ -30,58 +40,92 @@ abstract class MacroTool {
           required String packageConfigPath,
           required String scriptPath,
           required bool skipCleanup,
-          required bool watch}) =>
+          required bool skipMacros,
+          required bool watch,
+          required bool benchmark,
+          required bool useParts}) =>
       host == HostOption.analyzer
           ? AnalyzerMacroTool(
               workspacePath: workspacePath,
               packageConfigPath: packageConfigPath,
               scriptPath: scriptPath,
               skipCleanup: skipCleanup,
-              watch: watch)
+              skipMacros: skipMacros,
+              watch: watch,
+              benchmark: benchmark,
+              useParts: useParts)
           : CfeMacroTool(
               workspacePath: workspacePath,
               packageConfigPath: packageConfigPath,
               scriptPath: scriptPath,
               skipCleanup: skipCleanup,
-              watch: watch);
+              skipMacros: skipMacros,
+              watch: watch,
+              benchmark: benchmark,
+              useParts: useParts);
+
+  void show(String text) {
+    if (!benchmark) print(text);
+  }
+
+  /// Shows a benchmark result.
+  ///
+  /// Returns `true` when enough results have been shown.
+  bool showBenchmark(Stopwatch stopwatch) {
+    if (!benchmark) return false;
+    if (benchmark) stdout.write('${stopwatch.elapsedMilliseconds},');
+    --benchmarkRuns;
+    if (benchmarkRuns == 0) {
+      print('');
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   Future<void> run() async {
-    print('Running ${p.basename(scriptPath)} with macros on $this.');
-    print('~~~');
-    print('Package config: $packageConfigPath');
-    print('Workspace: $workspacePath');
-    print('Script: $scriptPath');
+    show('Running ${p.basename(scriptPath)} with macros on $this.');
+    show('~~~');
+    show('Package config: $packageConfigPath');
+    show('Workspace: $workspacePath');
+    show('Script: $scriptPath');
 
     // TODO(davidmorgan): make it an option to run with the CFE instead.
-    if (!await augment()) {
-      print('No augmentation was generated, nothing to do, exiting.');
+    final augmentedPaths = await augment();
+    if (augmentedPaths.isEmpty) {
+      show('No augmentation was generated, nothing to do, exiting.');
       exit(1);
     }
 
-    _addImportAugment();
+    for (final path in augmentedPaths) {
+      _addImportAugment(path);
+    }
 
     try {
-      print('~~~ running, output follows');
-      final result = Process.runSync(
-        Platform.resolvedExecutable,
-        [
-          'run',
-          '--enable-experiment=macros',
-          '--enable-experiment=enhanced-parts',
-          '--packages=$packageConfigPath',
-          scriptPath
-        ],
-        workingDirectory: workspacePath,
-      );
-      stdout.write(result.stdout);
-      stderr.write(result.stderr);
-      exitCode = result.exitCode;
+      if (!benchmark) {
+        show('~~~ running, output follows');
+        final result = Process.runSync(
+          Platform.resolvedExecutable,
+          [
+            'run',
+            '--enable-experiment=macros',
+            '--enable-experiment=enhanced-parts',
+            '--packages=$packageConfigPath',
+            scriptPath
+          ],
+          workingDirectory: workspacePath,
+        );
+        stdout.write(result.stdout);
+        stderr.write(result.stderr);
+        exitCode = result.exitCode;
+      }
     } finally {
       if (skipCleanup) {
-        print(
+        show(
             '~~~ exit code $exitCode, skipping cleanup because --skip-cleanup');
       } else {
-        print('~~~ exit code $exitCode, cleanup follows');
+        show('~~~ exit code $exitCode, cleanup follows');
+        // TODO: for all paths.
         _removeImportAugment();
         _removeAugmentations();
       }
@@ -91,41 +135,52 @@ abstract class MacroTool {
     exit(exitCode);
   }
 
-  /// The path where macro-generated augmentations will be written.
-  String get augmentationFilePath => '$scriptPath.macro_tool_output';
+  /// The extension with which macro-generated augmentations will be written.
+  String get augmentationFileExtension => '.macro_tool_output';
 
   /// Runs macros in [scriptFile] on the analyzer.
   ///
   /// Writes any augmentation to [augmentationFilePath].
   ///
-  /// Returns whether an augmentation file was written.
-  Future<bool> augment();
+  /// Returns the files that got augmented.
+  Future<List<String>> augment();
 
   /// Deletes the augmentation file created by this tool.
   void _removeAugmentations() {
-    print('Deleting: $augmentationFilePath');
-    File(augmentationFilePath).deleteSync();
+    //show('Deleting: $augmentationFilePath');
+    //File(augmentationFilePath).deleteSync();
   }
 
   /// Adds `import augment` of the augmentation file.
   ///
   /// When macros run in the analyzer or CFE this inclusion of the augmentation
   /// output is automatic, but for `macro_tool` it has to be patched in.
-  void _addImportAugment() {
-    print('Patching to import augmentations: $scriptPath');
+  void _addImportAugment(String path) {
+    show('Patching to import augmentations: $path');
 
-    // Add the `import augment` statement at the start of the file.
-    final partName = p.basename(augmentationFilePath);
-    final line = "import augment '$partName'; $_addedMarker\n";
+    // Add the `import augment` or `part` statement.
+    final partName = p.basename('$path$augmentationFileExtension');
+    final line =
+        "${useParts ? 'part ' : 'import augment'} '$partName'; $_addedMarker\n";
 
-    final file = File(scriptPath);
-    file.writeAsStringSync(
-        line + _removeToolAddedLinesFromSource(file.readAsStringSync()));
+    final file = File(path);
+    file.writeAsStringSync(_insertAfterLastImport(
+        line, _removeToolAddedLinesFromSource(file.readAsStringSync())));
+  }
+
+  String _insertAfterLastImport(String line, String source) {
+    final importRegexp = RegExp(r'^import .*;$', multiLine: true);
+    final index = source.lastIndexOf(importRegexp);
+    if (index == -1) return line + source;
+    final nextLineIndex = index + source.substring(index).indexOf('\n') + 1;
+    return source.substring(0, nextLineIndex) +
+        line +
+        source.substring(nextLineIndex);
   }
 
   /// Reverts the script file.
   void _removeImportAugment() {
-    print('Reverting: $scriptPath');
+    show('Reverting: $scriptPath');
     final file = File(scriptPath);
     file.writeAsStringSync(
         _removeToolAddedLinesFromSource(file.readAsStringSync()));
@@ -134,6 +189,30 @@ abstract class MacroTool {
   /// Returns [source] with lines added by [_addImportAugment] removed.
   String _removeToolAddedLinesFromSource(String source) =>
       source.split('\n').where((l) => !l.endsWith(_addedMarker)).join('\n');
+
+  /// Updates the script to trigger macro rerun.
+  ///
+  /// The script must contain the string `CACHEBUSTER` in a place that triggers
+  /// recomputation, for example in a field name.
+  ///
+  /// If there is an augmentation output file, updates that too.
+  void cacheBustScript() {
+    final token = random.nextInt(1 << 32).toRadixString(16) +
+        random.nextInt(1 << 32).toRadixString(16);
+    for (final path in [scriptPath, '$scriptPath$augmentationFileExtension']) {
+      final file = File(path);
+      if (!file.existsSync()) continue;
+      final source = file.readAsStringSync();
+      final cacheBusterRegexp = RegExp('CACHEBUSTER[a-z0-9]*');
+      if (path == scriptPath && !source.contains(cacheBusterRegexp)) {
+        throw StateError(
+            'Scripts for benchmarking should contain the string CACHEBUSTER '
+            'which will be updated to trigger macro rerun.');
+      }
+      file.writeAsStringSync(
+          source.replaceAll(cacheBusterRegexp, 'CACHEBUSTER$token'));
+    }
+  }
 }
 
 final String _addedMarker = '// added by macro_tool';

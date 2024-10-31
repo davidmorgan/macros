@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:benchmark_generator/random.dart';
 import 'package:benchmark_generator/workspace.dart';
 
 enum Strategy {
@@ -39,8 +38,7 @@ class JsonEncodableInputGenerator {
     }
   }
 
-  String _generateLibrary(int index,
-      {bool topLevelCacheBuster = false, bool fieldCacheBuster = false}) {
+  String _generateLibrary(int index) {
     final buffer = StringBuffer();
 
     if (strategy == Strategy.macro) {
@@ -53,20 +51,20 @@ class JsonEncodableInputGenerator {
       buffer.writeln('next_in_cycle.A0? referenceOther;');
     }
 
-    if (topLevelCacheBuster) {
-      buffer.writeln('int? cacheBuster$largeRandom;');
-    }
-
     for (var j = 0; j != classesPerLibrary; ++j) {
-      buffer.write(_generateClass(j, fieldCacheBuster: fieldCacheBuster));
+      buffer.write(_generateClass(j));
     }
 
     return buffer.toString();
   }
 
-  String _generateClass(int index, {required bool fieldCacheBuster}) {
+  String _generateClass(int index) {
     final className = 'A$index';
-    String fieldName(int index) => 'a$index';
+
+    String fieldName(int fieldIndex) {
+      if (index == 0 && fieldIndex == 0) return 'aCACHEBUSTER';
+      return 'a$fieldIndex';
+    }
 
     final result =
         StringBuffer(strategy == Strategy.macro ? '@JsonCodable()' : '');
@@ -77,9 +75,6 @@ class JsonEncodableInputGenerator {
   external $className.fromJson(Map<String, Object?> json);
   external Map<String, Object?> toJson();''');
 
-    if (fieldCacheBuster) {
-      result.writeln('int? b$largeRandom;');
-    }
     for (var i = 0; i != fieldsPerClass; ++i) {
       result.writeln('int? ${fieldName(i)};');
     }
@@ -111,15 +106,5 @@ class JsonEncodableInputGenerator {
 
     result.writeln('}');
     return result.toString();
-  }
-
-  void changeIrrelevantInput(Workspace workspace) {
-    workspace.write('a0.dart',
-        source: _generateLibrary(0, topLevelCacheBuster: true));
-  }
-
-  void changeRevelantInput(Workspace workspace) {
-    workspace.write('a0.dart',
-        source: _generateLibrary(0, fieldCacheBuster: true));
   }
 }

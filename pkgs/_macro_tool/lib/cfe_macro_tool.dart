@@ -18,7 +18,10 @@ class CfeMacroTool extends MacroTool {
       required super.packageConfigPath,
       required super.scriptPath,
       required super.skipCleanup,
-      required super.watch})
+      required super.skipMacros,
+      required super.watch,
+      required super.benchmark,
+      required super.useParts})
       : super.internal();
 
   /// Runs macros in [scriptFile] using the CFE.
@@ -27,8 +30,11 @@ class CfeMacroTool extends MacroTool {
   ///
   /// Returns whether an augmentation file was written.
   @override
-  Future<bool> augment() async {
+  Future<List<String>> augment() async {
     if (watch) throw UnimplementedError('--watch not implemented for CFE.');
+    if (benchmark) {
+      throw UnimplementedError('--benchmark not implemented for CFE.');
+    }
 
     // TODO(davidmorgan): this dill comes from the Dart SDK running the test,
     // but `package:frontend_server` and `package:front_end` are used as a
@@ -72,14 +78,15 @@ class CfeMacroTool extends MacroTool {
     final applicationMacroOutput = sources.entries
         .where((e) => e.key.scheme == 'dart-macro+file')
         .singleOrNull;
-    if (applicationMacroOutput == null) return false;
+    if (applicationMacroOutput == null) return [];
 
-    print('Macro output: '
+    final augmentationFilePath = '$scriptPath$augmentationFileExtension';
+    show('Macro output: '
         '$augmentationFilePath');
     File(augmentationFilePath)
         .writeAsStringSync(applicationMacroOutput.value.text);
 
-    return true;
+    return [scriptPath];
   }
 
   @override
