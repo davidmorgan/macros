@@ -303,5 +303,9 @@ Future<List<Object>> _resolveNames(List<Code> codes) async {
       result.add(identifiersByQualifiedNameStrings[qualifiedName.asString]!);
     }
   }
+
+  // ignore: avoid_dynamic_calls
+  (introspector as dynamic).macroProcessing?.hasAnyIntrospection = false;
+
   return result;
 }
