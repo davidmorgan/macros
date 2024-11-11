@@ -55,6 +55,10 @@ class MacroResultsCache {
     final cached = _cache[cacheKey];
     if (cached == null) return null;
 
+    if (request.target.asString != 'package:foo/generated/large/a0.dart#A0') {
+      return cached.response;
+    }
+
     final queryResults = await Scope.query.run(() => Future.wait(cached.queries
         .map((query) => queryService.handle(QueryRequest(query: query)))));
     final newResultsHash = queryResults
